@@ -1,0 +1,134 @@
+<% layout('layouts/boilerplate') -%>
+    <div class="row">
+        <div class="col-6">
+            <h2 class="h2">Alzheimer's detection</h2>
+            <form id="alzheimerForm" action="/blah">
+                <div class="mb-3">
+                    <label for="imageUpload" class="form-label">Upload your scan</label>
+                    <input type="file" class="form-control" id="imageUpload" name="imageUpload"
+                        placeholder="name@example.com">
+                </div>
+                <button class="btn btn-primary">Submit</button>
+            </form>
+            <div class=" mt-3" id="reportSummary">
+
+            </div>
+        </div>
+        <div class="col-6">
+            <canvas id="reportCard">
+
+            </canvas>
+        </div>
+    </div>
+    <script>
+        const form = document.querySelector("#alzheimerForm")
+        const imageScan = document.querySelector("#imageUpload")
+
+        const uploadScan = async (file, url) => {
+            if (!file) {
+                //do something
+
+                return null
+            }
+            const formData = new FormData()
+            formData.append('image', file)
+
+            const data = fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(res => {
+                    console.log(res)
+                    return res
+                })
+                .catch((err) => {
+                    console.log(`Error: ${err}`)
+                })
+
+            return data
+
+        }
+        const generateReportPieChart = (labels, data, idSelector, colours) => {
+            const reportCard = new Chart(idSelector, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Alzheimer's Report",
+                        data: data,
+                        backgroundColor: colours,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function (value) {
+                                    return value + "%";
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            return reportCard;
+        };
+
+        form.addEventListener('submit', async (evt) => {
+            const url = "http://localhost:5000/get-result"
+            evt.preventDefault()
+            const file = imageScan.files[0]
+            let result = await uploadScan(file, url).then(data => { return data })
+            result = result.class
+            const keys = Object.keys(result)
+            const values = Object.values(result)
+            const colours = ["#ee9b00", "#d00000", "#99d98c", "#94d2bd"]
+            const resultIndex = values.indexOf(Math.max(...values))
+            const reportCard = generateReportPieChart(keys, values, "reportCard", colours)
+
+            if (result) {
+                const text = document.querySelector("#reportSummary")
+                const h2 = document.createElement("h2")
+                const p = document.createElement("p")
+                p.classList.add(["lead", "text-center"])
+                h2.classList.add("h2")
+                let msg = ""
+                switch (keys[resultIndex]) {
+                    case keys[0]:
+                        //generate report for mild demented
+                        msg = "Caring for someone with mild dementia involves creating a stable routine and using clear communication. Providing support with daily tasks while ensuring a safe environment is essential. Encouraging the use of memory aids and engaging in suitable activities helps maintain a sense of normalcy. Social interaction is important, and patience is key when adapting to changes in behavior. Seeking professional guidance and joining support groups for caregivers can provide valuable insights. Lastly, prioritizing self-care is crucial for effectively navigating the challenges of caregiving."
+                        h2.innerText = "You have mild dementia"
+                        p.innerText = msg
+                        text.append(h2, p)
+                        break
+                    case keys[1]:
+                        //generate report for moderate demented
+                        msg = "Caring for someone with moderate dementia requires increased patience and adaptability. Establishing a clear routine remains important, but flexibility becomes crucial as cognitive challenges intensify. Providing more hands-on assistance with daily activities becomes necessary, and creating a safe environment becomes paramount to prevent accidents. Communication may become more challenging, requiring simplified language and increased support. Memory aids and engaging activities should be tailored to the individual's evolving abilities. Social interaction remains valuable, though the caregiver may need to take a more active role. Seeking regular guidance from healthcare professionals becomes even more critical, and joining support groups for caregivers can offer additional insights and emotional support. As the caregiving demands escalate, maintaining one's well-being through self-care becomes an even more vital aspect of the caregiving journey."
+                        h2.innerText = "You have moderate dementia"
+                        p.innerText = msg
+                        text.append(h2, p)
+                        break
+                    case keys[2]:
+                        //generate report for non demented
+                        msg = "You do not have Dementia"
+                        h2.innerText = "You have moderate dementia"
+                        p.innerText = msg
+                        text.append(h2, p)
+                        break
+                    case keys[3]:
+                        //generate report for very mild demented
+                        msg = "Caring for someone with very mild dementia involves subtle adjustments to support their cognitive well-being. Establishing a consistent routine can help create a sense of stability. Clear and simple communication remains important, along with providing gentle assistance with daily tasks as needed. Creating a safe environment involves minimal adjustments at this stage. Memory aids and engaging activities should be tailored to maintain cognitive stimulation. Social interaction remains beneficial, and patience is key as the person may occasionally struggle with memory. Regular check-ins with healthcare professionals help monitor and manage any changes. Caregivers should still prioritize self-care to navigate the challenges of supporting someone with very mild dementia effectively."
+                        h2.innerText = "You have moderate dementia"
+                        p.innerText = msg
+                        text.append(h2, p)
+                        break
+                }
+
+            }
+            console.log(finalResult)
+        })
+    </script>
